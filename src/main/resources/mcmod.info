@@ -1,0 +1,16 @@
+[
+{
+  "modid": "biomecrops",
+  "name": "BiomeCrops",
+  "description": "Configure in which biomes, or biome types, that crops can grow.",
+  "version": "${version}",
+  "mcversion": "${mcversion}",
+  "url": "",
+  "updateUrl": "",
+  "authorList": ["jA_cOp"],
+  "credits": "AppleCore team",
+  "logoFile": "",
+  "screenshots": [],
+  "dependencies": ["AppleCore"]
+}
+]
