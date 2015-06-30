@@ -8,7 +8,7 @@ import net.minecraftforge.common.MinecraftForge
 import org.apache.logging.log4j.Logger
 import org.jacop.biomecrops.client.ClientCommands
 import org.jacop.biomecrops.config.Config
-import org.jacop.biomecrops.server.PlantGrowthHandler
+import org.jacop.biomecrops.common.PlantGrowthHandler
 
 class ClientProxy extends Proxy {
   override def init(config : Config, logger : Logger) {
