@@ -41,7 +41,7 @@ object SupportedBlocks {
       case Some(exactClass) => List(exactClass -> Guarantee)
       case None => list.find(_.isAssignableFrom(tickClass)) match {
         case Some(superClass) => List(superClass -> Guarantee, tickClass -> Maybe)
-        case None => List(classOf[Block] -> Unsupported)
+        case None => List(tickClass -> Unsupported)
       }
     }
   }
