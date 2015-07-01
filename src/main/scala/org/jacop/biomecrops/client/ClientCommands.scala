@@ -1,6 +1,6 @@
 package org.jacop.biomecrops.client
 
-import net.minecraft.block.Block
+import net.minecraft.block.{IGrowable, Block}
 import net.minecraft.client.Minecraft
 import net.minecraft.command.ICommandSender
 import net.minecraft.entity.player.EntityPlayer
@@ -25,6 +25,7 @@ class ClientCommands extends ICommand_ScalaCompatible {
       val reply =
         Option(Minecraft.getMinecraft.objectMouseOver).filter(_.typeOfHit == MovingObjectType.BLOCK).map(trace => {
           val block = world.getBlock(trace.blockX, trace.blockY, trace.blockZ)
+          val metadata = world.getBlockMetadata(trace.blockX, trace.blockY, trace.blockZ)
           val blockClass = block.getClass
           val classes = getBlockInheritance(blockClass)
           val supportLevels = SupportedBlocks.supportLevel(blockClass)
@@ -41,12 +42,17 @@ class ClientCommands extends ICommand_ScalaCompatible {
             }
 
           val concludeColor = colorForSupportLevel(supportLevels.unzip._2.min)
+          val metadataSuffix = if(metadata == 0) "" else ":" + metadata.toString
+          val growableColor = if(blockClass.getInterfaces.contains(classOf[IGrowable]))
+            EnumChatFormatting.GREEN
+          else
+            EnumChatFormatting.RED
 
-          concludeColor + Block.blockRegistry.getNameForObject(block) + EnumChatFormatting.RESET + " | " +
-            classes.map(cls => colorForClass(cls) match {
+          concludeColor + Block.getIdFromBlock(block).toString + " " + Block.blockRegistry.getNameForObject(block) + EnumChatFormatting.RESET + metadataSuffix +
+            " | " + classes.map(cls => colorForClass(cls) match {
               case Some(color) => color + cls.getName + EnumChatFormatting.RESET
               case None => cls.getName
-            }).mkString(" -> ")
+            }).mkString(" -> ") + " (" + growableColor + "bonemeal" + EnumChatFormatting.RESET + ")"
         })
       reply.foreach(msg => player.addChatMessage(new ChatComponentText(msg)))
     }
