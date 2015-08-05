@@ -13,8 +13,8 @@ object BiomeCrops {
   private var config : Option[Config] = None
   private var logger : Option[Logger] = None
 
-  @SidedProxy(clientSide="org.jacop.biomecrops.ClientProxy", serverSide="org.jacop.biomecrops.ServerProxy")
-  var sidedProxy : Proxy = null
+  @SidedProxy(clientSide="org.jacop.biomecrops.CombinedProxy", serverSide="org.jacop.biomecrops.ServerProxy")
+  var sidedProxy : CommonProxy = null
 
   @EventHandler
   def preInit(event : FMLPreInitializationEvent) {

@@ -1,21 +1,18 @@
 package org.jacop.biomecrops
 
-import java.io.{File, FileWriter, PrintWriter}
+import java.io.{FileWriter, PrintWriter, File}
 
 import net.minecraft.block.Block
-import net.minecraftforge.client.ClientCommandHandler
 import net.minecraftforge.common.MinecraftForge
 import org.apache.logging.log4j.Logger
-import org.jacop.biomecrops.client.ClientCommands
-import org.jacop.biomecrops.config.Config
 import org.jacop.biomecrops.common.PlantGrowthHandler
+import org.jacop.biomecrops.config.Config
 
-class ClientProxy extends Proxy {
-  override def init(config : Config, logger : Logger) {
-    ClientCommandHandler.instance.registerCommand(new ClientCommands)
+class CommonProxy {
+  def init(config : Config, logger : Logger) : Unit = {
   }
 
-  override def postInit(config : Config, logger : Logger): Unit = {
+  def postInit(config : Config, logger : Logger) : Unit = {
     val plantGrowthHandler = new PlantGrowthHandler(config, logger)
     MinecraftForge.EVENT_BUS.register(plantGrowthHandler)
 
