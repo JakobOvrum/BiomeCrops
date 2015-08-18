@@ -14,6 +14,9 @@ import org.jacop.biomecrops.getBlockInheritance
 import squeek.applecore.api.plants.PlantGrowthEvent
 
 class PlantGrowthHandler(config : Config, logger : Logger) {
+  private val allBiomes = BiomeGenBase.getBiomeGenArray.flatMap(Option(_))
+  private val nameToBiome = allBiomes.map(_.biomeName).zip(allBiomes).toMap
+
   private val allCropSettings =
     for(crops <- config.cropCategories; categoryName = crops.name)
       yield new CropSettings(
@@ -21,7 +24,9 @@ class PlantGrowthHandler(config : Config, logger : Logger) {
           blockNames = crops.blockNames,
           requireDirectSunlight = crops.requireDirectSunlight,
           biomeTypeNames = crops.biomeTypes.map(_.toIterable),
-          rejectBiomeTypeNames = crops.rejectBiomeTypes
+          rejectBiomeTypeNames = crops.rejectBiomeTypes,
+          additionalBiomeNames = crops.additionalBiomes,
+          filterBiomeNames = crops.filterBiomes
         )
 
   val blockToCropSettings : Map[Int, CropSettings] =
@@ -48,7 +53,9 @@ class PlantGrowthHandler(config : Config, logger : Logger) {
                  blockNames: Iterable[String],
                  val requireDirectSunlight : Boolean,
                  biomeTypeNames : Option[Iterable[String]],
-                 rejectBiomeTypeNames : Iterable[String]) {
+                 rejectBiomeTypeNames : Iterable[String],
+                 additionalBiomeNames : Iterable[String],
+                 filterBiomeNames : Iterable[String]) {
     private val resolvedBlocks = blockNames
       .map(CropSettings.blockByName)
 
@@ -68,25 +75,35 @@ class PlantGrowthHandler(config : Config, logger : Logger) {
         logger.warn(s"block $blockName does not derive from a known plant block; this block requires manual AppleCore integration | $superChain")
     })
 
-    private def resolveBiomeNames(biomeTypeNames : Iterable[String]) = {
+    private def resolveBiomeTypeNames(biomeTypeNames : Iterable[String]) = {
       val biomeTypes = biomeTypeNames.map(CropSettings.biomeTypeByName)
       (biomeTypes.collect{case Left(x) => x}, biomeTypes.collect{case Right(x) => x})
     }
 
-    private val (biomeTypes, unrecognizedBiomeTypes) = resolveBiomeNames(biomeTypeNames.getOrElse(Iterable[String]()))
-    private val (rejectBiomeTypes, unrecognizedRejectBiomeTypes) = resolveBiomeNames(rejectBiomeTypeNames)
+    private def resolveBiomeNames(biomeNames : Iterable[String]) = {
+      val biomes = biomeNames.map(name => nameToBiome.get(name) match { case Some(x) => Left(x); case None => Right(name) })
+      (biomes.collect{case Left(x) => x}, biomes.collect{case Right(x) => x})
+    }
+
+    private val (biomeTypes, unrecognizedBiomeTypes) = resolveBiomeTypeNames(biomeTypeNames.getOrElse(Iterable[String]()))
+    private val (rejectBiomeTypes, unrecognizedRejectBiomeTypes) = resolveBiomeTypeNames(rejectBiomeTypeNames)
+    private val (additionalBiomes, unrecognizedBiomes) = resolveBiomeNames(additionalBiomeNames)
+    private val (filterBiomes, unrecognizedFilterBiomes) = resolveBiomeNames(filterBiomeNames)
 
     (unrecognizedBiomeTypes ++ unrecognizedRejectBiomeTypes)
-      .foreach(name => logger.error(s"Unrecognized biome type $name in category $categoryName"))
+      .foreach(name => logger.error(s"Unrecognized biome type $name in category '$categoryName'"))
 
-    private val biomes = if(biomeTypeNames.isDefined)
-      biomeTypes.flatMap(BiomeDictionary.getBiomesForType)
+    (unrecognizedBiomes ++ unrecognizedFilterBiomes)
+      .foreach(name => logger.error(s"Unrecognized biome '$name' in category '$categoryName'. Please note that entries are case sensitive"))
+
+    private val biomes = (if(biomeTypeNames.isDefined)
+      biomeTypes.flatMap(BiomeDictionary.getBiomesForType).toSet.union(additionalBiomes.toSet)
     else
-      BiomeGenBase.getBiomeGenArray.toIterable
+      BiomeGenBase.getBiomeGenArray.toIterable).toSet
 
-    private val rejectBiomes = rejectBiomeTypes.flatMap(BiomeDictionary.getBiomesForType)
+    private val rejectBiomes = rejectBiomeTypes.flatMap(BiomeDictionary.getBiomesForType).toSet.union(filterBiomes.toSet)
 
-    val thrivingBiomes = biomes.toSet.diff(rejectBiomes.toSet)
+    val thrivingBiomes = biomes.diff(rejectBiomes)
   }
 
   private val debugBlockFilter = List("minecraft:red_mushroom", "minecraft:brown_mushroom").map(Block.getBlockFromName).map(Block.getIdFromBlock)

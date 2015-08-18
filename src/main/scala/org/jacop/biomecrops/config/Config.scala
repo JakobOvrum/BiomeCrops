@@ -160,6 +160,8 @@ class Config(configDirectory : File, val logger : Logger) {
     val biomeTypes = if(biomeTypeList.length == 1 && biomeTypeList(0) == "ALL") None else Some(biomeTypeList)
     val rejectBiomeTypes = config.get(name, "rejectBiomeTypes", Array[String]()).getStringList.map(_.toUpperCase)
     val requireDirectSunlight = config.get(name, "requireDirectSunlight", false).getBoolean
+    val additionalBiomes = config.get(name, "additionalBiomes", Array[String]()).getStringList
+    val filterBiomes = config.get(name, "filterBiomes", Array[String]()).getStringList
   }
 
   val cropCategories =
