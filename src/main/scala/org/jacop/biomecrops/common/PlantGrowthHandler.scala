@@ -2,10 +2,12 @@ package org.jacop.biomecrops.common
 
 import cpw.mods.fml.common.eventhandler.Event.Result
 import cpw.mods.fml.common.eventhandler.{Event, SubscribeEvent}
+import cpw.mods.fml.common.gameevent.PlayerEvent
 import net.minecraft.block.Block
 import net.minecraft.world.World
 import net.minecraft.world.biome.BiomeGenBase
 import net.minecraftforge.common.BiomeDictionary
+import net.minecraftforge.event.entity.player.BonemealEvent
 import org.apache.logging.log4j.Logger
 import org.jacop.biomecrops.config.{Config, SupportedBlocks}
 import org.jacop.biomecrops.getBlockInheritance
@@ -25,7 +27,7 @@ class PlantGrowthHandler(config : Config, logger : Logger) {
   val blockToCropSettings : Map[Int, CropSettings] =
     (for{cropSettings <- allCropSettings
         blockID <- cropSettings.blockIDs}
-      yield blockID -> cropSettings).toMap
+      yield (blockID, cropSettings)).toMap
 
   object CropSettings {
     def biomeTypeByName(name : String) =
@@ -59,7 +61,7 @@ class PlantGrowthHandler(config : Config, logger : Logger) {
     blocks.zip(blocks.map(_.getClass).map(blockClass => SupportedBlocks.list.exists(_.isAssignableFrom(blockClass))))
       .filter(!_._2)
       .unzip._1
-      .map(block => Block.blockRegistry.getNameForObject(block) -> getBlockInheritance(block.getClass))
+      .map(block => (Block.blockRegistry.getNameForObject(block), getBlockInheritance(block.getClass)))
       .foreach(pair => {
         val blockName = pair._1
         val superChain = pair._2.map(_.getName).mkString(" -> ")
@@ -114,6 +116,12 @@ class PlantGrowthHandler(config : Config, logger : Logger) {
   def onGrowthTick(event : PlantGrowthEvent.AllowGrowthTick) {
     if(!event.world.isRemote)
       event.setResult(handleEvent(event.world, event.block, event.x, event.y, event.z))
+  }
+
+  @SubscribeEvent
+  def onBonemealEvent(event : BonemealEvent): Unit = {
+    if(!event.world.isRemote)
+      event.setCanceled(handleEvent(event.world, event.block, event.x, event.y, event.z) == Result.DENY)
   }
 
   /*
