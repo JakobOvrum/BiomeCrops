@@ -116,7 +116,7 @@ class PlantGrowthHandler(config : Config, logger : Logger) {
           logger.warn("growth tick for unconfigured plant " + Block.blockRegistry.getNameForObject(block))
         Result.DEFAULT
       case Some(cropSettings) =>
-        val biome = world.getWorldChunkManager.getBiomeGenAt(x, z)
+        val biome = world.getBiomeGenForCoords(x, z)
         val validBiome = cropSettings.thrivingBiomes.contains(biome)
         val blockName = Block.blockRegistry.getNameForObject(block)
         val biomeName = biome.biomeName
